@@ -10,8 +10,17 @@ export function clearAllApplications() {
 
     // Clear localStorage
     if (typeof window !== 'undefined') {
+      // Clear applications from localStorage
       localStorage.removeItem('mockApplications');
       console.log("Cleared all applications from localStorage");
+
+      // Also clear the permanent record of applied jobs
+      localStorage.removeItem('permanentAppliedJobs');
+      console.log("Cleared permanent record of applied jobs");
+
+      // Clear most recent application
+      localStorage.removeItem('mostRecentApplication');
+      console.log("Cleared most recent application");
 
       // Dispatch event to notify other components
       const event = new CustomEvent('applicationsCleared', {
