@@ -1,0 +1,120 @@
+import { getMyJobs } from "@/api/apiJobs";
+import useFetch from "@/hooks/use-fetch";
+import { useUser } from "@clerk/clerk-react";
+import { useEffect, useState } from "react";
+import { BarLoader } from "react-spinners";
+import JobCard from "./job-card";
+import { getLocallyCreatedJobs, removeLocallyCreatedJob } from "../data/mock-created-jobs.js";
+
+const CreatedJobs = () => {
+  const { user } = useUser();
+  const [localJobs, setLocalJobs] = useState([]);
+  const [combinedJobs, setCombinedJobs] = useState([]);
+
+  const {
+    loading: loadingCreatedJobs,
+    data: createdJobs,
+    fn: fnCreatedJobs,
+  } = useFetch(getMyJobs, {
+    recruiter_id: user.id,
+  });
+
+  // Load locally created jobs
+  const loadLocalJobs = () => {
+    try {
+      const jobs = getLocallyCreatedJobs();
+      console.log("Locally created jobs:", jobs);
+      
+      // Filter jobs to only show those created by this user
+      const userJobs = jobs.filter(job => job.recruiter_id === user.id);
+      console.log("User's locally created jobs:", userJobs);
+      
+      setLocalJobs(userJobs);
+    } catch (error) {
+      console.error("Error loading locally created jobs:", error);
+    }
+  };
+
+  // Handle job deletion
+  const handleJobAction = (jobId) => {
+    console.log("Job action triggered for job:", jobId);
+    
+    // Remove from local storage
+    removeLocallyCreatedJob(jobId);
+    
+    // Refresh API jobs
+    fnCreatedJobs();
+    
+    // Refresh local jobs
+    loadLocalJobs();
+  };
+
+  // Load jobs from API
+  useEffect(() => {
+    fnCreatedJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load locally created jobs
+  useEffect(() => {
+    loadLocalJobs();
+    
+    // Listen for updates to locally created jobs
+    const handleLocalJobsUpdated = () => {
+      console.log("Local jobs updated event received");
+      loadLocalJobs();
+    };
+    
+    window.addEventListener('localJobsUpdated', handleLocalJobsUpdated);
+    
+    return () => {
+      window.removeEventListener('localJobsUpdated', handleLocalJobsUpdated);
+    };
+  }, [user.id]);
+
+  // Combine API and local jobs
+  useEffect(() => {
+    if (createdJobs) {
+      // Create a map of job IDs from API to avoid duplicates
+      const apiJobIds = new Set(createdJobs.map(job => job.id));
+      
+      // Filter local jobs to exclude those already in API
+      const uniqueLocalJobs = localJobs.filter(job => !apiJobIds.has(job.id));
+      
+      // Combine API and unique local jobs
+      const combined = [...(createdJobs || []), ...uniqueLocalJobs];
+      console.log("Combined jobs:", combined);
+      
+      setCombinedJobs(combined);
+    } else {
+      setCombinedJobs(localJobs);
+    }
+  }, [createdJobs, localJobs]);
+
+  return (
+    <div>
+      {loadingCreatedJobs ? (
+        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+      ) : (
+        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {combinedJobs?.length ? (
+            combinedJobs.map((job) => {
+              return (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onJobAction={() => handleJobAction(job.id)}
+                  isMyJob
+                />
+              );
+            })
+          ) : (
+            <div>No Jobs Found 😢</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CreatedJobs;

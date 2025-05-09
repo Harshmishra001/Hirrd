@@ -1,0 +1,164 @@
+import { getApplications } from "@/api/apiApplication";
+import useFetch from "@/hooks/use-fetch";
+import { useUser } from "@clerk/clerk-react";
+import { useEffect, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { BarLoader } from "react-spinners";
+import { getApplicationsForUser } from "../data/mock-applications.js";
+import ApplicationCard from "./application-card";
+
+const CreatedApplications = () => {
+  const { user } = useUser();
+  const [mockApplicationsList, setMockApplicationsList] = useState([]);
+  const location = useLocation();
+  const [newApplicationId, setNewApplicationId] = useState(null);
+  const newApplicationRef = useRef(null);
+
+  const {
+    loading: loadingApplications,
+    data: applications,
+    fn: fnApplications,
+  } = useFetch(getApplications, {
+    user_id: user.id,
+  });
+
+  useEffect(() => {
+    fnApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Get applications from mock data
+  useEffect(() => {
+    if (user) {
+      // Function to load applications
+      const loadApplications = () => {
+        try {
+          // Get applications for the current user
+          const userApplications = getApplicationsForUser(user.id);
+          console.log("Loaded applications for user:", userApplications.length);
+          setMockApplicationsList(userApplications);
+
+          // Log application details for debugging
+          if (userApplications.length > 0) {
+            userApplications.forEach((app, index) => {
+              console.log(`Application ${index + 1}:`, {
+                id: app.id,
+                job_id: app.job_id,
+                job_title: app.job?.title,
+                company: app.job?.company?.name
+              });
+            });
+          }
+        } catch (error) {
+          console.error("Error loading applications:", error);
+        }
+      };
+
+      // Load applications immediately
+      loadApplications();
+
+      // Listen for application updates
+      const handleApplicationUpdated = (event) => {
+        if (event.detail.userId === user.id) {
+          console.log("Application updated event received in CreatedApplications:", event.detail);
+          
+          // Set the new application ID if this is a new application
+          if (event.detail.action === 'added') {
+            setNewApplicationId(event.detail.jobId);
+          }
+          
+          loadApplications();
+        }
+      };
+
+      // Listen for applications cleared event
+      const handleApplicationsCleared = () => {
+        console.log("Applications cleared event received");
+        loadApplications();
+      };
+
+      // Add event listeners
+      window.addEventListener('applicationUpdated', handleApplicationUpdated);
+      window.addEventListener('applicationsCleared', handleApplicationsCleared);
+
+      // Clean up event listeners on unmount
+      return () => {
+        window.removeEventListener('applicationUpdated', handleApplicationUpdated);
+        window.removeEventListener('applicationsCleared', handleApplicationsCleared);
+      };
+    }
+  }, [user]);
+
+  // Check if we just arrived from applying to a job
+  useEffect(() => {
+    // If we have a 'from' state indicating we came from applying to a job
+    if (location.state && location.state.fromApply) {
+      console.log("Arrived at My Jobs page from applying to a job:", location.state);
+      
+      // Set the new application ID to highlight it
+      if (location.state.jobId) {
+        setNewApplicationId(parseInt(location.state.jobId));
+      }
+      
+      // Clear the state to prevent this from running again on page refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  // Scroll to the new application when it's rendered
+  useEffect(() => {
+    if (newApplicationRef.current) {
+      console.log("Scrolling to new application");
+      
+      // Add a small delay to ensure the element is fully rendered
+      setTimeout(() => {
+        newApplicationRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 500);
+    }
+  }, [mockApplicationsList, newApplicationId]);
+
+  if (loadingApplications) {
+    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  }
+
+  // Combine API and mock data - prefer mock data for this implementation
+  const combinedApplications = mockApplicationsList;
+  const hasApplications = combinedApplications?.length > 0;
+
+  console.log("Rendering applications page with", combinedApplications?.length || 0, "applications");
+  console.log("New application ID:", newApplicationId);
+
+  return (
+    <div className="flex flex-col gap-2">
+      {hasApplications ? (
+        combinedApplications.map((application) => {
+          // Check if this is the newly applied job
+          const isNewApplication = parseInt(application.job_id) === newApplicationId;
+          
+          if (isNewApplication) {
+            console.log("Found new application:", application.job_id);
+          }
+          
+          return (
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              isCandidate={true}
+              isNew={isNewApplication}
+              cardRef={isNewApplication ? newApplicationRef : null}
+            />
+          );
+        })
+      ) : (
+        <div className="text-center text-xl mt-10">
+          You haven't applied to any jobs yet 👀
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CreatedApplications;
