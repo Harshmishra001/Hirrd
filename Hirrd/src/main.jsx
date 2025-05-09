@@ -7,6 +7,7 @@ import "./index.css";
 
 // Import your publishable key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const ALLOW_EXTERNAL_ACCOUNTS = import.meta.env.VITE_CLERK_ALLOW_EXTERNAL_ACCOUNTS === 'true';
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");
@@ -33,6 +34,10 @@ try {
         }}
         publishableKey={PUBLISHABLE_KEY}
         afterSignOutUrl="/"
+        allowSignUp={true}
+        signInUrl="/"
+        signUpUrl="/"
+        allowExternalAccountsOnly={ALLOW_EXTERNAL_ACCOUNTS}
       >
         <App />
       </ClerkProvider>

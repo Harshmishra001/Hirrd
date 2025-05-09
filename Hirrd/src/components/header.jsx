@@ -201,6 +201,7 @@ const Header = () => {
                   ? "/jobs?skip-onboarding=true"
                   : "/onboarding?force-selection=true"
             }
+            allowSignUp={true}
           />
         </div>
       )}
