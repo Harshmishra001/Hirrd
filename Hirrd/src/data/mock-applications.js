@@ -395,11 +395,90 @@ export function hasUserAppliedToJob(jobId, userId) {
 
 // Function to update application status
 export function updateApplicationStatus(jobId, status) {
-  const applications = mockApplications.filter(app => app.job_id === jobId);
+  try {
+    console.log(`Updating status for job ${jobId} to ${status}`);
 
-  applications.forEach(app => {
-    app.status = status;
-  });
+    // Convert jobId to number if it's a string
+    const numericJobId = typeof jobId === 'string' ? parseInt(jobId, 10) : jobId;
 
-  return applications;
+    // Find applications for this job
+    const applications = mockApplications.filter(app => {
+      const appJobId = typeof app.job_id === 'string' ? parseInt(app.job_id, 10) : app.job_id;
+      return appJobId === numericJobId;
+    });
+
+    // Update status for all applications for this job
+    applications.forEach(app => {
+      app.status = status;
+    });
+
+    // Save updated applications to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mockApplications', JSON.stringify(mockApplications));
+      console.log(`Updated status for ${applications.length} applications to ${status}`);
+
+      // Dispatch event to notify other components
+      const event = new CustomEvent('applicationUpdated', {
+        detail: { jobId: numericJobId, status, action: 'statusUpdated' }
+      });
+      window.dispatchEvent(event);
+    }
+
+    return applications;
+  } catch (error) {
+    console.error("Error updating application status:", error);
+    return [];
+  }
+}
+
+// Function to get applications for a specific job
+export function getApplicationsForJob(jobId) {
+  try {
+    console.log(`Getting applications for job ${jobId}`);
+
+    if (!jobId) {
+      console.log("Missing jobId in getApplicationsForJob");
+      return [];
+    }
+
+    // Convert jobId to number if it's a string
+    const numericJobId = typeof jobId === 'string' ? parseInt(jobId, 10) : jobId;
+
+    // Force reload from localStorage to ensure we have the latest data
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockApplications');
+        if (stored) {
+          try {
+            const parsedApplications = JSON.parse(stored);
+            // Update the mockApplications array with the latest data
+            mockApplications.length = 0; // Clear the array
+            mockApplications.push(...parsedApplications); // Add all items from localStorage
+            console.log("Reloaded applications from localStorage:", parsedApplications.length);
+          } catch (parseError) {
+            console.error("Error parsing applications from localStorage:", parseError);
+            // If there's an error parsing, reset the localStorage
+            localStorage.setItem('mockApplications', JSON.stringify([]));
+          }
+        } else {
+          console.log("No applications found in localStorage");
+        }
+      }
+    } catch (error) {
+      console.error("Error reloading applications from localStorage:", error);
+    }
+
+    // Filter applications for this job
+    const jobApplications = mockApplications.filter(app => {
+      const appJobId = typeof app.job_id === 'string' ? parseInt(app.job_id, 10) : app.job_id;
+      return appJobId === numericJobId;
+    });
+
+    console.log(`Found ${jobApplications.length} applications for job ${jobId}`);
+
+    return jobApplications;
+  } catch (error) {
+    console.error("Error getting applications for job:", error);
+    return [];
+  }
 }

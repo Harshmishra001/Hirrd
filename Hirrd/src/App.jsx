@@ -1,11 +1,12 @@
-import { useEffect } from "react";
+import { useAuth } from "@clerk/clerk-react";
+import { useEffect, useRef } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
+import ErrorBoundary from "./components/error-boundary";
+import NotFound from "./components/not-found";
 import ProtectedRoute from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
 import AppLayout from "./layouts/app-layout";
-import ErrorBoundary from "./components/error-boundary";
-import NotFound from "./components/not-found";
 
 import JobPage from "./pages/job";
 import JobListing from "./pages/jobListing";
@@ -95,7 +96,27 @@ const router = createBrowserRouter([
   },
 ]);
 
+// Custom hook to handle sign-out events
+function useSignOutHandler() {
+  const { isSignedIn } = useAuth();
+  const previousSignInState = useRef(isSignedIn);
+
+  useEffect(() => {
+    // If the user was signed in before and now is not, they've signed out
+    if (previousSignInState.current === true && isSignedIn === false) {
+      console.log("User signed out - clearing all applications");
+      clearAllApplications();
+    }
+
+    // Update the previous state
+    previousSignInState.current = isSignedIn;
+  }, [isSignedIn]);
+}
+
 function AppWithReset() {
+  // Use our custom hook to handle sign-out events
+  useSignOutHandler();
+
   // Clear applications on app start
   useEffect(() => {
     console.log("App started - clearing all applications");

@@ -1,11 +1,13 @@
 /* eslint-disable react/prop-types */
+import { updateApplicationStatus as apiUpdateApplicationStatus } from "@/api/apiApplication";
 import { removeSavedJob as apiRemoveSavedJob, deleteJob, saveJob } from "@/api/apiJobs";
 import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/clerk-react";
-import { Heart, MapPinIcon, Trash2Icon } from "lucide-react";
+import { Briefcase, Heart, MapPinIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { getApplicationsForJob, updateApplicationStatus } from "../data/mock-applications.js";
 import { addToSavedJobs, isJobSavedByUser, removeSavedJob } from "../data/mock-saved-jobs.js";
 import { Button } from "./ui/button";
 import {
@@ -39,6 +41,8 @@ const JobCard = ({
   pageType = "jobs", // New prop to indicate which page the card is on: "jobs", "dashboard", "detail"
 }) => {
   const [saved, setSaved] = useState(savedInit);
+  const [applications, setApplications] = useState([]);
+  const [showApplications, setShowApplications] = useState(false);
   const { user } = useUser();
   const location = useLocation();
 
@@ -94,6 +98,29 @@ const JobCard = ({
     job_id: job.id,
     user_id: user?.id,
   });
+
+  // For updating application status
+  const {
+    loading: loadingUpdateStatus,
+    fn: fnUpdateStatus,
+  } = useFetch(apiUpdateApplicationStatus, {
+    job_id: job.id,
+  });
+
+  // Function to handle application status updates
+  const handleStatusChange = (jobId, value) => {
+    // Update application status in mock data
+    updateApplicationStatus(jobId, value);
+
+    // Also try to update via API
+    fnUpdateStatus(value).catch(error => {
+      console.log("API update failed, but mock data already updated:", error);
+    });
+
+    // Reload applications
+    const updatedApplications = getApplicationsForJob(job.id);
+    setApplications(updatedApplications);
+  };
 
   const handleSaveJob = async () => {
     // First check the current saved status
@@ -374,6 +401,42 @@ const JobCard = ({
     console.log(`Job ${job.id} heart icon state:`, saved ? 'RED' : 'normal');
   }, [saved, job.id]);
 
+  // Load applications for this job if it's in the recruiter dashboard
+  useEffect(() => {
+    if (isMyJob && pageType === "dashboard" && job.id) {
+      const loadApplications = () => {
+        const jobApplications = getApplicationsForJob(job.id);
+        setApplications(jobApplications);
+      };
+
+      // Load applications initially
+      loadApplications();
+
+      // Set up event listeners to reload applications when they change
+      const handleApplicationUpdated = (event) => {
+        if (event.detail && event.detail.jobId === job.id) {
+          console.log(`Application updated for job ${job.id}, reloading applications`);
+          loadApplications();
+        }
+      };
+
+      const handleApplicationsCleared = () => {
+        console.log("All applications cleared, reloading applications");
+        loadApplications();
+      };
+
+      // Add event listeners
+      window.addEventListener('applicationUpdated', handleApplicationUpdated);
+      window.addEventListener('applicationsCleared', handleApplicationsCleared);
+
+      // Clean up event listeners
+      return () => {
+        window.removeEventListener('applicationUpdated', handleApplicationUpdated);
+        window.removeEventListener('applicationsCleared', handleApplicationsCleared);
+      };
+    }
+  }, [isMyJob, pageType, job.id]);
+
   // Debug job properties on mount
   useEffect(() => {
     console.log(`Job Card mounted for job ${job.id} (${job.title}):`);
@@ -383,7 +446,10 @@ const JobCard = ({
     console.log(`- pageType: ${pageType}`);
     console.log(`- shouldShowDeleteButton: ${shouldShowDeleteButton}`);
     console.log(`- pathname: ${location.pathname}`);
-  }, [job, isMyJob, user?.id, pageType, shouldShowDeleteButton, location]);
+    if (isMyJob && pageType === "dashboard") {
+      console.log(`- applications: ${applications.length}`);
+    }
+  }, [job, isMyJob, user?.id, pageType, shouldShowDeleteButton, location, applications.length]);
 
   return (
     <Card className="flex flex-col">
@@ -427,6 +493,74 @@ const JobCard = ({
             Company: {job.company?.name || job.company_name}
           </div>
         )}
+
+        {/* Show applications count for recruiter's own jobs */}
+        {isMyJob && pageType === "dashboard" && (
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 items-center text-sm">
+              <Briefcase size={15} />
+              <span>{applications.length} Applicant{applications.length !== 1 ? 's' : ''}</span>
+            </div>
+            {applications.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowApplications(!showApplications)}
+              >
+                {showApplications ? 'Hide' : 'View'} Applicants
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Show applications list if toggled */}
+        {isMyJob && pageType === "dashboard" && showApplications && applications.length > 0 && (
+          <div className="mt-2 p-2 bg-gray-800 rounded-md">
+            <h4 className="font-bold mb-2">Applicants:</h4>
+            <ul className="space-y-2">
+              {applications.map(app => (
+                <li key={app.id} className="text-sm p-2 bg-gray-700 rounded">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="font-semibold">{app.name}</div>
+                    <Select
+                      defaultValue={app.status || 'applied'}
+                      onValueChange={(value) => handleStatusChange(app.job_id, value)}
+                    >
+                      <SelectTrigger className="w-28 h-6 text-xs">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="applied">Applied</SelectItem>
+                        <SelectItem value="interviewing">Interviewing</SelectItem>
+                        <SelectItem value="hired">Hired</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="text-xs text-gray-400 mb-2">
+                    {app.experience} years • {app.education} • {app.skills}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-gray-400">
+                      Applied: {new Date(app.created_at).toLocaleDateString()}
+                    </div>
+                    {app.resume && (
+                      <a
+                        href={app.resume}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300"
+                      >
+                        View Resume
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <hr />
         {job.description.substring(0, job.description.indexOf(".") > 0 ? job.description.indexOf(".") : 100)}.
       </CardContent>
