@@ -105,6 +105,7 @@ function useSignOutHandler() {
     // If the user was signed in before and now is not, they've signed out
     if (previousSignInState.current === true && isSignedIn === false) {
       console.log("User signed out - clearing all applications");
+      // This is the only place where applications should be cleared
       clearAllApplications();
     }
 
@@ -117,10 +118,10 @@ function AppWithReset() {
   // Use our custom hook to handle sign-out events
   useSignOutHandler();
 
-  // Clear applications on app start
+  // Don't clear applications on app start anymore
+  // This allows applications to persist until the user signs out
   useEffect(() => {
-    console.log("App started - clearing all applications");
-    clearAllApplications();
+    console.log("App started - applications will persist until sign out");
   }, []);
 
   return <RouterProvider router={router} />;
