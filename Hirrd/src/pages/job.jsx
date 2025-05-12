@@ -80,10 +80,36 @@ const JobPage = () => {
   const extractCompanyName = (description) => {
     if (!description) return null;
 
-    // Look for "**Company:** Company Name" pattern in the description
-    const companyMatch = description.match(/\*\*Company:\*\*\s*(.*?)(\n|$)/);
+    // Look for "Company: Company Name" pattern in the description
+    const companyMatch = description.match(/Company:\s*(.*?)(\n|$)/);
     if (companyMatch && companyMatch[1]) {
       return companyMatch[1].trim();
+    }
+
+    return null;
+  };
+
+  // Helper function to extract PIN code from job description
+  const extractPinCode = (description) => {
+    if (!description) return null;
+
+    // Look for "PIN Code: 123456" pattern in the description
+    const pinCodeMatch = description.match(/PIN Code:\s*(.*?)(\n|$)/);
+    if (pinCodeMatch && pinCodeMatch[1]) {
+      return pinCodeMatch[1].trim();
+    }
+
+    return null;
+  };
+
+  // Helper function to extract phone number from job description
+  const extractPhoneNumber = (description) => {
+    if (!description) return null;
+
+    // Look for "Contact Phone: +91 1234567890" pattern in the description
+    const phoneMatch = description.match(/Contact Phone:\s*(.*?)(\n|$)/);
+    if (phoneMatch && phoneMatch[1]) {
+      return phoneMatch[1].trim();
     }
 
     return null;
@@ -122,6 +148,43 @@ const JobPage = () => {
             };
           }
         }
+
+        // Make sure PIN code is available - either from direct property or from description
+        if (!localJobWithApplications.pin_code && localJobWithApplications.description) {
+          const pinCode = extractPinCode(localJobWithApplications.description);
+          if (pinCode) {
+            localJobWithApplications.pin_code = pinCode;
+          }
+        }
+
+        // Make sure phone number is available - either from direct property or from description
+        if (!localJobWithApplications.phone_number && localJobWithApplications.description) {
+          const phoneNumber = extractPhoneNumber(localJobWithApplications.description);
+          if (phoneNumber) {
+            localJobWithApplications.phone_number = phoneNumber;
+          }
+        }
+
+        // Force PIN code and phone number to be visible in the UI
+        if (localJobWithApplications.pin_code === "") {
+          // Try to extract from description again with a more lenient approach
+          const pinCodeMatch = localJobWithApplications.description?.match(/PIN Code:?\s*([0-9]+)/i);
+          if (pinCodeMatch && pinCodeMatch[1]) {
+            localJobWithApplications.pin_code = pinCodeMatch[1].trim();
+          }
+        }
+
+        if (localJobWithApplications.phone_number === "") {
+          // Try to extract from description again with a more lenient approach
+          const phoneMatch = localJobWithApplications.description?.match(/Contact Phone:?\s*([+0-9\s-]+)/i);
+          if (phoneMatch && phoneMatch[1]) {
+            localJobWithApplications.phone_number = phoneMatch[1].trim();
+          }
+        }
+
+        // Log the PIN code and phone number for debugging
+        console.log("Local job PIN code:", localJobWithApplications.pin_code);
+        console.log("Local job phone number:", localJobWithApplications.phone_number);
 
         setCurrentJob(localJobWithApplications);
       }
@@ -166,6 +229,43 @@ const JobPage = () => {
         }
       }
 
+      // Make sure PIN code is available - either from direct property or from description
+      if (!jobWithApplications.pin_code && jobWithApplications.description) {
+        const pinCode = extractPinCode(jobWithApplications.description);
+        if (pinCode) {
+          jobWithApplications.pin_code = pinCode;
+        }
+      }
+
+      // Make sure phone number is available - either from direct property or from description
+      if (!jobWithApplications.phone_number && jobWithApplications.description) {
+        const phoneNumber = extractPhoneNumber(jobWithApplications.description);
+        if (phoneNumber) {
+          jobWithApplications.phone_number = phoneNumber;
+        }
+      }
+
+      // Force PIN code and phone number to be visible in the UI
+      if (jobWithApplications.pin_code === "") {
+        // Try to extract from description again with a more lenient approach
+        const pinCodeMatch = jobWithApplications.description?.match(/PIN Code:?\s*([0-9]+)/i);
+        if (pinCodeMatch && pinCodeMatch[1]) {
+          jobWithApplications.pin_code = pinCodeMatch[1].trim();
+        }
+      }
+
+      if (jobWithApplications.phone_number === "") {
+        // Try to extract from description again with a more lenient approach
+        const phoneMatch = jobWithApplications.description?.match(/Contact Phone:?\s*([+0-9\s-]+)/i);
+        if (phoneMatch && phoneMatch[1]) {
+          jobWithApplications.phone_number = phoneMatch[1].trim();
+        }
+      }
+
+      // Log the PIN code and phone number for debugging
+      console.log("API job PIN code:", jobWithApplications.pin_code);
+      console.log("API job phone number:", jobWithApplications.phone_number);
+
       setCurrentJob(jobWithApplications);
     } else if (loadingJob === false) {
       // If API call is done but no job data, use mock data
@@ -197,6 +297,43 @@ const JobPage = () => {
             };
           }
         }
+
+        // Make sure PIN code is available - either from direct property or from description
+        if (!mockJobWithApplications.pin_code && mockJobWithApplications.description) {
+          const pinCode = extractPinCode(mockJobWithApplications.description);
+          if (pinCode) {
+            mockJobWithApplications.pin_code = pinCode;
+          }
+        }
+
+        // Make sure phone number is available - either from direct property or from description
+        if (!mockJobWithApplications.phone_number && mockJobWithApplications.description) {
+          const phoneNumber = extractPhoneNumber(mockJobWithApplications.description);
+          if (phoneNumber) {
+            mockJobWithApplications.phone_number = phoneNumber;
+          }
+        }
+
+        // Force PIN code and phone number to be visible in the UI
+        if (mockJobWithApplications.pin_code === "") {
+          // Try to extract from description again with a more lenient approach
+          const pinCodeMatch = mockJobWithApplications.description?.match(/PIN Code:?\s*([0-9]+)/i);
+          if (pinCodeMatch && pinCodeMatch[1]) {
+            mockJobWithApplications.pin_code = pinCodeMatch[1].trim();
+          }
+        }
+
+        if (mockJobWithApplications.phone_number === "") {
+          // Try to extract from description again with a more lenient approach
+          const phoneMatch = mockJobWithApplications.description?.match(/Contact Phone:?\s*([+0-9\s-]+)/i);
+          if (phoneMatch && phoneMatch[1]) {
+            mockJobWithApplications.phone_number = phoneMatch[1].trim();
+          }
+        }
+
+        // Log the PIN code and phone number for debugging
+        console.log("Mock job PIN code:", mockJobWithApplications.pin_code);
+        console.log("Mock job phone number:", mockJobWithApplications.phone_number);
 
         setCurrentJob(mockJobWithApplications);
       }
@@ -233,14 +370,14 @@ const JobPage = () => {
         )}
       </div>
 
-      <div className="flex justify-between ">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap justify-between gap-4">
+        <div className="flex gap-2 items-center">
           <MapPinIcon /> {currentJob.location}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Briefcase /> {currentJob.applications?.length || 0} Applicants
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {currentJob.isOpen ? (
             <>
               <DoorOpen /> Open
@@ -252,6 +389,30 @@ const JobPage = () => {
           )}
         </div>
       </div>
+
+      {/* Contact Information Section - Only show if at least one field has a valid value */}
+      {((currentJob.pin_code && currentJob.pin_code.trim() !== "") ||
+         (currentJob.phone_number && currentJob.phone_number.trim() !== "")) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+          {/* PIN Code - Only show if it has a valid value */}
+          {currentJob.pin_code && currentJob.pin_code.trim() !== "" && (
+            <div className="flex items-center gap-2 text-gray-300 border border-gray-700 rounded-md p-3 bg-gray-800/30">
+              <MapPinIcon className="text-blue-400" size={20} />
+              <span>PIN Code: {currentJob.pin_code}</span>
+            </div>
+          )}
+
+          {/* Phone Number - Only show if it has a valid value */}
+          {currentJob.phone_number && currentJob.phone_number.trim() !== "" && (
+            <div className="flex items-center gap-2 text-gray-300 border border-gray-700 rounded-md p-3 bg-gray-800/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="text-blue-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span>Contact: {currentJob.phone_number}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {currentJob.recruiter_id === user?.id && (
         <Select onValueChange={handleStatusChange}>

@@ -35,12 +35,14 @@ const CreatedJobs = () => {
     }
   };
 
-  // Handle job deletion
-  const handleJobAction = (jobId) => {
-    console.log("Job action triggered for job:", jobId);
+  // Handle job actions (edit or delete)
+  const handleJobAction = (jobId, action = "refresh") => {
+    console.log(`Job action '${action}' triggered for job:`, jobId);
 
-    // Remove from local storage
-    removeLocallyCreatedJob(jobId);
+    // Only remove from local storage if it's a delete action
+    if (action === "delete") {
+      removeLocallyCreatedJob(jobId);
+    }
 
     // Refresh API jobs
     fnCreatedJobs();
@@ -194,7 +196,7 @@ const CreatedJobs = () => {
                   <JobCard
                     key={job.id}
                     job={job}
-                    onJobAction={() => handleJobAction(job.id)}
+                    onJobAction={(action = "refresh") => handleJobAction(job.id, action)}
                     isMyJob
                     pageType="dashboard"
                   />

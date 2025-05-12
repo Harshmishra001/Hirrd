@@ -1,22 +1,30 @@
 /* eslint-disable react/prop-types */
 import { updateApplicationStatus as apiUpdateApplicationStatus } from "@/api/apiApplication";
-import { removeSavedJob as apiRemoveSavedJob, deleteJob, saveJob } from "@/api/apiJobs";
+import { removeSavedJob as apiRemoveSavedJob, deleteJob, saveJob, updateJob } from "@/api/apiJobs";
 import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/clerk-react";
-import { Briefcase, Heart, MapPinIcon, Trash2Icon } from "lucide-react";
+import { Briefcase, Heart, MapPinIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 import { getApplicationsForJob, updateApplicationStatus } from "../data/mock-applications.js";
 import { addToSavedJobs, isJobSavedByUser, removeSavedJob } from "../data/mock-saved-jobs.js";
+import EditJobModal from "./EditJobModal";
 import { Button } from "./ui/button";
 import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "./ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 // Helper function to extract company name from job description
 const extractCompanyName = (description) => {
@@ -37,12 +45,14 @@ const JobCard = ({
   onJobAction = () => {},
   isMyJob = false,
   isNew = false,
+  isUpdated = false, // New prop to indicate if the job was recently updated
   showDeleteButton = false, // New prop to control delete button visibility
   pageType = "jobs", // New prop to indicate which page the card is on: "jobs", "dashboard", "detail"
 }) => {
   const [saved, setSaved] = useState(savedInit);
   const [applications, setApplications] = useState([]);
   const [showApplications, setShowApplications] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const { user } = useUser();
   const location = useLocation();
 
@@ -104,6 +114,13 @@ const JobCard = ({
     loading: loadingUpdateStatus,
     fn: fnUpdateStatus,
   } = useFetch(apiUpdateApplicationStatus, {
+    job_id: job.id,
+  });
+
+  const {
+    loading: loadingUpdateJob,
+    fn: fnUpdateJob,
+  } = useFetch(updateJob, {
     job_id: job.id,
   });
 
@@ -248,6 +265,109 @@ const JobCard = ({
     onJobAction();
   };
 
+  const handleEditJob = async (updatedJobData) => {
+    try {
+      console.log("Updating job:", job.id, updatedJobData);
+
+      // Close the modal
+      setShowEditModal(false);
+
+      // Make sure to preserve important fields that shouldn't be lost during update
+      const preservedData = {
+        ...updatedJobData,
+        id: job.id,
+        recruiter_id: job.recruiter_id,
+        isOpen: job.isOpen !== undefined ? job.isOpen : true,
+        applications: job.applications || [],
+        saved: job.saved || []
+      };
+
+      // Try to update via API
+      try {
+        await fnUpdateJob(preservedData);
+        console.log("Job updated via API successfully");
+      } catch (apiError) {
+        console.error("Error updating job via API:", apiError);
+        // Continue with localStorage update even if API fails
+      }
+
+      // Also update in localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const storedJobs = localStorage.getItem('mockCreatedJobs');
+          if (storedJobs) {
+            const jobs = JSON.parse(storedJobs);
+            const updatedJobs = jobs.map(j => {
+              if (j.id === job.id) {
+                // Preserve important fields from the original job
+                return {
+                  ...j,
+                  ...preservedData,
+                  // Make sure these fields are preserved
+                  company: j.company || preservedData.company,
+                  company_name: preservedData.company_name || j.company_name,
+                  recruiter_id: j.recruiter_id,
+                  // Ensure PIN code and phone number are preserved
+                  pin_code: preservedData.pin_code || j.pin_code || "",
+                  phone_number: preservedData.phone_number || j.phone_number || ""
+                };
+              }
+              return j;
+            });
+            localStorage.setItem('mockCreatedJobs', JSON.stringify(updatedJobs));
+            console.log("Job updated in localStorage");
+
+            // Also update the job in mockJobs if it exists there
+            try {
+              const mockJobsStr = localStorage.getItem('mockJobs');
+              if (mockJobsStr) {
+                const mockJobs = JSON.parse(mockJobsStr);
+                const updatedMockJobs = mockJobs.map(j => {
+                  if (j.id === job.id) {
+                    return {
+                      ...j,
+                      ...preservedData,
+                      company: j.company || preservedData.company,
+                      company_name: preservedData.company_name || j.company_name,
+                      pin_code: preservedData.pin_code || j.pin_code || "",
+                      phone_number: preservedData.phone_number || j.phone_number || ""
+                    };
+                  }
+                  return j;
+                });
+                localStorage.setItem('mockJobs', JSON.stringify(updatedMockJobs));
+                console.log("Job also updated in mockJobs if it existed there");
+              }
+            } catch (mockJobsError) {
+              console.error("Error updating job in mockJobs:", mockJobsError);
+            }
+          }
+        } catch (localStorageError) {
+          console.error("Error updating job in localStorage:", localStorageError);
+        }
+
+        // Dispatch an event to notify other components
+        const event = new CustomEvent('localJobsUpdated', {
+          detail: { action: 'updated', jobId: job.id }
+        });
+        window.dispatchEvent(event);
+
+        // Store the updated job ID in localStorage so the jobs page can highlight it
+        localStorage.setItem('lastUpdatedJobId', job.id.toString());
+        localStorage.setItem('jobUpdatedTimestamp', Date.now().toString());
+
+        console.log("Job updated successfully:", job.id);
+      }
+
+      // Call the callback to refresh the job list with "edit" action
+      if (typeof onJobAction === 'function') {
+        onJobAction("edit");
+      }
+    } catch (error) {
+      console.error("Error in handleEditJob:", error);
+    }
+  };
+
   const handleDeleteJob = async () => {
     try {
       console.log("Deleting job:", job.id, job.title);
@@ -362,51 +482,72 @@ const JobCard = ({
     // Check if job is saved in API response
     if (savedJob !== undefined) {
       setSaved(savedJob?.length > 0);
-    } else if (user) {
+    } else if (user && job && job.id) {
       // If API fails, check in mock data
-      const isSaved = isJobSavedByUser(job.id, user.id);
-      setSaved(isSaved || savedInit);
+      try {
+        const isSaved = isJobSavedByUser(job.id, user.id);
+        setSaved(isSaved || savedInit);
+      } catch (error) {
+        console.error("Error checking saved status in API response:", error);
+        setSaved(savedInit);
+      }
     }
-  }, [savedJob, user, job.id, savedInit]);
+  }, [savedJob, user, job, savedInit]);
 
   // Initialize saved state from mock data on component mount
   useEffect(() => {
-    if (user && job.id) {
-      const isSaved = isJobSavedByUser(job.id, user.id);
-      console.log(`Job ${job.id} saved status on mount:`, isSaved);
-      setSaved(isSaved);
+    if (user && job && job.id) {
+      try {
+        const isSaved = isJobSavedByUser(job.id, user.id);
+        console.log(`Job ${job.id} saved status on mount:`, isSaved);
+        setSaved(isSaved);
+      } catch (error) {
+        console.error("Error checking saved status:", error);
+        setSaved(savedInit);
+      }
     }
-  }, [user, job.id]);
+  }, [user, job, savedInit]);
 
   // Check saved status periodically to ensure heart icon stays in sync
   useEffect(() => {
-    if (user && job.id) {
+    if (user && job && job.id) {
       // Set up an interval to check saved status every 5 seconds
       // Use a longer interval to avoid too many updates
       const intervalId = setInterval(() => {
-        const isSaved = isJobSavedByUser(job.id, user.id);
-        if (isSaved !== saved) {
-          console.log(`Job ${job.id} saved status changed from ${saved} to ${isSaved}`);
-          setSaved(isSaved);
+        try {
+          const isSaved = isJobSavedByUser(job.id, user.id);
+          if (isSaved !== saved) {
+            console.log(`Job ${job.id} saved status changed from ${saved} to ${isSaved}`);
+            setSaved(isSaved);
+          }
+        } catch (error) {
+          console.error("Error checking saved status in interval:", error);
         }
       }, 5000);
 
       // Clean up interval on unmount
       return () => clearInterval(intervalId);
     }
-  }, [user, job.id, saved]);
+  }, [user, job, saved]);
 
   // Log when saved state changes
   useEffect(() => {
-    console.log(`Job ${job.id} heart icon state:`, saved ? 'RED' : 'normal');
-  }, [saved, job.id]);
+    if (job && job.id) {
+      console.log(`Job ${job.id} heart icon state:`, saved ? 'RED' : 'normal');
+    }
+  }, [saved, job]);
 
   // Load applications for this job if it's in the recruiter dashboard
   useEffect(() => {
-    if (isMyJob && pageType === "dashboard" && job.id) {
+    if (isMyJob && pageType === "dashboard" && job && job.id) {
       const loadApplications = () => {
-        const jobApplications = getApplicationsForJob(job.id);
-        setApplications(jobApplications);
+        try {
+          const jobApplications = getApplicationsForJob(job.id);
+          setApplications(jobApplications || []);
+        } catch (error) {
+          console.error("Error loading applications:", error);
+          setApplications([]);
+        }
       };
 
       // Load applications initially
@@ -439,41 +580,68 @@ const JobCard = ({
 
   // Debug job properties on mount
   useEffect(() => {
-    console.log(`Job Card mounted for job ${job.id} (${job.title}):`);
-    console.log(`- recruiter_id: ${job.recruiter_id}`);
-    console.log(`- isMyJob: ${isMyJob}`);
-    console.log(`- user.id: ${user?.id}`);
-    console.log(`- pageType: ${pageType}`);
-    console.log(`- shouldShowDeleteButton: ${shouldShowDeleteButton}`);
-    console.log(`- pathname: ${location.pathname}`);
-    if (isMyJob && pageType === "dashboard") {
-      console.log(`- applications: ${applications.length}`);
+    if (job) {
+      console.log(`Job Card mounted for job ${job.id} (${job.title || 'No Title'}):`);
+      console.log(`- recruiter_id: ${job.recruiter_id}`);
+      console.log(`- isMyJob: ${isMyJob}`);
+      console.log(`- user.id: ${user?.id}`);
+      console.log(`- pageType: ${pageType}`);
+      console.log(`- shouldShowDeleteButton: ${shouldShowDeleteButton}`);
+      console.log(`- pathname: ${location.pathname}`);
+      if (isMyJob && pageType === "dashboard") {
+        console.log(`- applications: ${applications.length}`);
+      }
     }
   }, [job, isMyJob, user?.id, pageType, shouldShowDeleteButton, location, applications.length]);
 
+  // If job is undefined or null, don't render anything
+  if (!job) {
+    return null;
+  }
+
   return (
-    <Card className="flex flex-col">
-      {loadingDeleteJob && (
+    <Card className={`flex flex-col ${isUpdated ? 'border-2 border-blue-500 shadow-lg shadow-blue-500/20' : ''}`}>
+      {/* Edit Job Modal */}
+      <EditJobModal
+        job={job}
+        isOpen={showEditModal}
+        onSave={handleEditJob}
+        onCancel={() => setShowEditModal(false)}
+      />
+
+      {(loadingDeleteJob || loadingUpdateJob) && (
         <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
       )}
       <CardHeader className="flex">
         <CardTitle className="flex justify-between font-bold">
           <div className="flex items-center gap-2">
-            {job.title}
+            {job.title || "Untitled Job"}
             {isNew && (
               <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                 New
               </span>
             )}
+            {isUpdated && (
+              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                Updated
+              </span>
+            )}
           </div>
-          {/* Only show delete icon on Recruiter Dashboard or job detail pages */}
+          {/* Only show edit and delete icons on Recruiter Dashboard or job detail pages */}
           {shouldShowDeleteButton && (
-            <Trash2Icon
-              fill="red"
-              size={18}
-              className="text-red-300 cursor-pointer"
-              onClick={handleDeleteJob}
-            />
+            <div className="flex gap-2">
+              <PencilIcon
+                size={18}
+                className="text-blue-300 cursor-pointer"
+                onClick={() => setShowEditModal(true)}
+              />
+              <Trash2Icon
+                fill="red"
+                size={18}
+                className="text-red-300 cursor-pointer"
+                onClick={handleDeleteJob}
+              />
+            </div>
           )}
         </CardTitle>
       </CardHeader>
@@ -484,13 +652,24 @@ const JobCard = ({
             <img src={job.company.logo_url} className="h-6" alt={job.company.name || "Company"} />
           )}
           <div className="flex gap-2 items-center">
-            <MapPinIcon size={15} /> {job.location}
+            <MapPinIcon size={15} /> {job.location || "Remote"}
+            {job.pin_code && job.pin_code.trim() !== "" && <span className="ml-1 text-xs text-gray-400">({job.pin_code})</span>}
           </div>
         </div>
         {/* Display company name from either company object or company_name field */}
         {(job.company?.name || job.company_name) && (
           <div className="text-sm text-gray-400">
             Company: {job.company?.name || job.company_name}
+          </div>
+        )}
+
+        {/* Display phone number if available and not empty */}
+        {job.phone_number && job.phone_number.trim() !== "" && (
+          <div className="text-sm text-gray-400 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            Contact: {job.phone_number}
           </div>
         )}
 
@@ -562,7 +741,9 @@ const JobCard = ({
         )}
 
         <hr />
-        {job.description.substring(0, job.description.indexOf(".") > 0 ? job.description.indexOf(".") : 100)}.
+        {job.description ?
+          job.description.substring(0, job.description.indexOf(".") > 0 ? job.description.indexOf(".") : 100) + "."
+          : "No description available."}
       </CardContent>
       <CardFooter className="flex gap-2">
         <Link to={`/job/${job.id}`} className="flex-1">

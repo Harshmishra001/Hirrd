@@ -42,10 +42,17 @@ export const addLocallyCreatedJob = (job) => {
         name: job.company_name || "",
         logo_url: "/companies/default.png"
       },
+      // Ensure PIN code and phone number are preserved
+      pin_code: job.pin_code || "",
+      phone_number: job.phone_number || "",
       // Add empty arrays for saved and applications if missing
       saved: job.saved || [],
       applications: job.applications || []
     };
+
+    // Log the PIN code and phone number for debugging
+    console.log("Adding job with PIN code:", completeJob.pin_code);
+    console.log("Adding job with phone number:", completeJob.phone_number);
 
     // Get existing jobs
     const existingJobs = getLocallyCreatedJobs();

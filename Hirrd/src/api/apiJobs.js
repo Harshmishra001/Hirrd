@@ -174,6 +174,78 @@ export async function deleteJob(token, { job_id }) {
   return data;
 }
 
+// Update job
+export async function updateJob(token, { job_id }, jobData) {
+  try {
+    if (!token) {
+      console.error("No token provided for updateJob");
+      throw new Error("Authentication token is missing");
+    }
+
+    console.log("Updating job with data:", jobData);
+    const supabase = await supabaseClient(token);
+
+    // Validate required fields
+    if (!jobData.title) throw new Error("Job title is required");
+    if (!jobData.description) throw new Error("Job description is required");
+    if (!jobData.location) throw new Error("Job location is required");
+    if (!jobData.requirements) throw new Error("Job requirements are required");
+
+    // Create a job object with only the fields to update
+    const jobToUpdate = {
+      title: jobData.title,
+      description: jobData.description,
+      location: jobData.location,
+      requirements: jobData.requirements
+    };
+
+    console.log("Updating job with data:", jobToUpdate);
+
+    const { data, error } = await supabase
+      .from("jobs")
+      .update(jobToUpdate)
+      .eq("id", job_id)
+      .select();
+
+    if (error) {
+      console.error("Error updating job:", error);
+      throw new Error(error.message || "Database error");
+    }
+
+    if (!data || data.length === 0) {
+      console.error("No data returned after job update");
+      throw new Error("Job was updated but no data was returned");
+    }
+
+    console.log("Job updated successfully:", data);
+
+    // Update the job in localStorage for persistence
+    try {
+      const storedJobs = localStorage.getItem('mockCreatedJobs');
+      if (storedJobs) {
+        const jobs = JSON.parse(storedJobs);
+        const updatedJobs = jobs.map(job => {
+          if (job.id === job_id) {
+            return { ...job, ...jobToUpdate };
+          }
+          return job;
+        });
+        localStorage.setItem('mockCreatedJobs', JSON.stringify(updatedJobs));
+        console.log("Job updated in localStorage");
+      }
+    } catch (localStorageError) {
+      console.error("Error updating job in localStorage:", localStorageError);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in updateJob:", error);
+    // Create a more descriptive error message
+    const errorMessage = error.message || "Unknown error";
+    throw new Error("Error Updating Job: " + errorMessage);
+  }
+}
+
 // - post job
 export async function addNewJob(token, _, jobData) {
   try {

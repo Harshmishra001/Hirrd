@@ -1,6 +1,4 @@
-# Hirrd - Job Portal Application
-
-![Hirrd Logo](Hirrd/public/logo.png)
+# Hirrd (BOOKING LIST) - Job Portal Application
 
 ## Overview
 
@@ -9,16 +7,16 @@ Hirrd is a modern job portal application that connects job seekers with employer
 ## Features
 
 ### For Job Seekers (Candidates)
-- **Job Search**: Browse and search for jobs using filters like keywords, location, and job category
+- **Job Search**: Browse and search for jobs using filters like keywords, location, and company
 - **Job Applications**: Apply to jobs with resume upload and application tracking
 - **Saved Jobs**: Save interesting job listings for later review
 - **Application Management**: Track all your job applications in one place
 - **User Profile**: Manage your professional profile and credentials
 
 ### For Employers (Recruiters)
-- **Job Posting**: Create and publish job listings with detailed descriptions
+- **Job Posting**: Create and publish job listings with detailed descriptions, PIN codes, and contact information
 - **Applicant Management**: Review and manage applications for your job postings
-- **Recruiter Dashboard**: Overview of all your job postings and applications
+- **Recruiter Dashboard**: Overview of all your job postings and applications with edit and delete options
 - **Hiring Status**: Update the status of job listings (open/closed)
 
 ### General Features
@@ -26,6 +24,7 @@ Hirrd is a modern job portal application that connects job seekers with employer
 - **Role-Based Access**: Different interfaces and permissions for candidates and recruiters
 - **Responsive Design**: Fully responsive interface that works on all devices
 - **Dark Mode**: Built-in dark mode for comfortable viewing
+- **Offline Mode**: Ability to work with mock data when API is unavailable
 
 ## Technology Stack
 
@@ -44,13 +43,13 @@ The application is structured around different user roles and features:
 
 - **Landing Page**: Introduction to the platform with quick access to job search and posting
 - **Onboarding**: Role selection for new users (candidate or recruiter)
-- **Job Listing**: Browse and search for available jobs
-- **Job Details**: View detailed information about a specific job
+- **Job Listing**: Browse and search for available jobs with filtering options
+- **Job Details**: View detailed information about a specific job including PIN code and contact information
 - **Application Process**: Submit job applications with resume and details
 - **My Jobs**: View and manage your job applications as a candidate
 - **Saved Jobs**: Access jobs you've saved for later
-- **Recruiter Dashboard**: Manage job postings and review applications as a recruiter
-- **Post Job**: Create new job listings as a recruiter
+- **Recruiter Dashboard**: Manage job postings and review applications as a recruiter with edit and delete options
+- **Post Job**: Create new job listings as a recruiter with PIN code and contact information
 
 ## Key Features Implementation
 
@@ -71,21 +70,39 @@ When a user applies for a job:
 4. The job is marked as "applied" for that user
 
 When a user signs out, all their applied jobs are cleared, allowing them to reapply after signing back in.
+Applied jobs remain visible in the 'my jobs' page until the user signs out.
+
+### Job Posting Process
+
+When a recruiter posts a job:
+1. They fill out a form with job details including title, description, requirements, location
+2. They can add PIN code and phone number for contact information
+3. The job is published and becomes visible to all users
+4. The recruiter can edit or delete the job from their dashboard
+
+### Recruiter Dashboard
+
+The recruiter dashboard provides:
+1. Overview of all posted jobs with edit and delete options
+2. List of applicants for each job
+3. Ability to toggle job status between open and closed
+4. When a user applies to a job, the recruiter dashboard shows who has applied to which job
 
 ### Data Storage
 
 The application uses both Supabase and local storage:
 - **Supabase**: For persistent storage of jobs, applications, and user data
 - **LocalStorage**: For temporary storage of application state and user preferences
+- **Mock Data**: Fallback data when API is unavailable
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v16 or higher)
 - npm or yarn
-- Supabase account
-- Clerk account
+- Supabase account (optional - app works with mock data)
+- Clerk account (for authentication)
 
 ### Installation
 
@@ -116,7 +133,22 @@ npm run dev
 yarn dev
 ```
 
-5. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:5173` or the port shown in your terminal
+
+### Using the Application
+
+1. Sign up or log in using Clerk authentication
+2. Select your role (candidate or recruiter) during onboarding
+3. As a candidate:
+   - Browse jobs on the Jobs page
+   - Apply to jobs that interest you
+   - Save jobs for later
+   - View your applications in My Jobs
+4. As a recruiter:
+   - Post new jobs with detailed information including PIN code and contact details
+   - View and manage your posted jobs in the Recruiter Dashboard
+   - Edit or delete jobs as needed
+   - View applications for your jobs
 
 ## Deployment
 
@@ -143,3 +175,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - UI components from [Shadcn UI](https://ui.shadcn.com/)
 - Authentication by [Clerk](https://clerk.dev/)
 - Database by [Supabase](https://supabase.io/)
+- Icons from [Lucide Icons](https://lucide.dev/)
+
+## Recent Updates
+
+- Added PIN code and phone number fields to job postings
+- Implemented edit functionality for recruiter-posted jobs
+- Fixed job application persistence until user signs out
+- Added highlighting for newly created and updated jobs
+- Improved recruiter dashboard with better job management
+- Enhanced job details page with contact information display

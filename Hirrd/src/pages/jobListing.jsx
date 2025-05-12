@@ -31,6 +31,7 @@ const JobListing = () => {
   const [companies, setCompanies] = useState([]);
   const [searchParams] = useSearchParams();
   const [newJobId, setNewJobId] = useState(null);
+  const [updatedJobId, setUpdatedJobId] = useState(null);
   const [localJobs, setLocalJobs] = useState([]);
 
   const { user } = useUser();
@@ -150,6 +151,40 @@ const JobListing = () => {
       fetchJobs();
     }
   }, [searchParams]);
+
+  // Check for recently updated job
+  useEffect(() => {
+    // Check if there's a recently updated job in localStorage
+    const lastUpdatedJobId = localStorage.getItem('lastUpdatedJobId');
+    const jobUpdatedTimestamp = localStorage.getItem('jobUpdatedTimestamp');
+
+    if (lastUpdatedJobId && jobUpdatedTimestamp) {
+      // Only consider it "recently updated" if it was updated in the last 10 seconds
+      const now = Date.now();
+      const updateTime = parseInt(jobUpdatedTimestamp);
+      const timeDiff = now - updateTime;
+
+      if (timeDiff < 10000) { // 10 seconds
+        console.log("Found recently updated job:", lastUpdatedJobId);
+        setUpdatedJobId(parseInt(lastUpdatedJobId));
+
+        // Make sure we fetch the latest jobs to show the updated job
+        fetchJobs();
+
+        // Clear the updated job ID after 5 seconds
+        setTimeout(() => {
+          setUpdatedJobId(null);
+          // Clear from localStorage
+          localStorage.removeItem('lastUpdatedJobId');
+          localStorage.removeItem('jobUpdatedTimestamp');
+        }, 5000);
+      } else {
+        // Clear old data
+        localStorage.removeItem('lastUpdatedJobId');
+        localStorage.removeItem('jobUpdatedTimestamp');
+      }
+    }
+  }, []);
 
   // Filter jobs based on search criteria
   useEffect(() => {
@@ -359,6 +394,7 @@ const JobListing = () => {
               key={job.id}
               job={job}
               isNew={job.id === newJobId || localJobs.some(localJob => localJob.id === job.id)}
+              isUpdated={job.id === updatedJobId}
               onJobAction={fetchJobs}
               pageType="jobs" // Explicitly set to "jobs" to hide delete button
             />

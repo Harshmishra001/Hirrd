@@ -42,6 +42,8 @@ const schema = z.object({
   job_type: z.string().min(1, { message: "Job type is required" }),
   experience_level: z.string().min(1, { message: "Experience level is required" }),
   salary_range: z.string().optional(),
+  pin_code: z.string().optional(),
+  phone_number: z.string().optional(),
 });
 
 const jobTypes = [
@@ -83,7 +85,9 @@ const PostJob = () => {
       requirements: "",
       job_type: "",
       experience_level: "",
-      salary_range: ""
+      salary_range: "",
+      pin_code: "",
+      phone_number: ""
     },
     resolver: zodResolver(schema),
   });
@@ -104,7 +108,9 @@ const PostJob = () => {
         requirements: data.requirements,
         recruiter_id: user.id,
         isOpen: true,
-        company_name: data.company_name // Add company_name directly to the job data
+        company_name: data.company_name, // Add company_name directly to the job data
+        pin_code: data.pin_code || '', // Add optional pin code
+        phone_number: data.phone_number || '' // Add optional phone number
       };
 
       // Add job type to the description for better visibility
@@ -125,8 +131,20 @@ const PostJob = () => {
       // Add company name to the description for better visibility
       if (data.company_name) {
         // Make sure company name is at the beginning of the description for easier extraction
-        jobData.description = `**Company:** ${data.company_name}\n\n${jobData.description}`;
+        jobData.description = `Company: ${data.company_name}\n\n${jobData.description}`;
         console.log("Added company name to description:", data.company_name);
+      }
+
+      // Add pin code to the description if provided
+      if (data.pin_code) {
+        jobData.description = `PIN Code: ${data.pin_code}\n\n${jobData.description}`;
+        console.log("Added PIN code to description:", data.pin_code);
+      }
+
+      // Add phone number to the description if provided
+      if (data.phone_number) {
+        jobData.description = `Contact Phone: ${data.phone_number}\n\n${jobData.description}`;
+        console.log("Added phone number to description:", data.phone_number);
       }
 
       console.log("Submitting job data:", jobData);
@@ -162,6 +180,8 @@ const PostJob = () => {
           recruiter_id: user.id,
           isOpen: true,
           company_name: data.company_name, // Add company_name directly to the job data
+          pin_code: data.pin_code || '', // Add optional pin code
+          phone_number: data.phone_number || '', // Add optional phone number
           // Mark this as a fallback attempt
           fallbackAttempt: true
         };
@@ -200,6 +220,8 @@ const PostJob = () => {
             recruiter_id: user.id,
             isOpen: true,
             company_name: data.company_name, // Add company_name directly to the job data
+            pin_code: data.pin_code || '', // Add optional pin code
+            phone_number: data.phone_number || '', // Add optional phone number
             // Flag to use mock data
             useMockData: true
           };
@@ -392,6 +414,40 @@ const PostJob = () => {
                 </div>
                 {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pin_code" className="text-gray-300">
+                  PIN Code <span className="text-gray-500">(Optional)</span>
+                </Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <Input
+                    id="pin_code"
+                    placeholder="e.g. 110001"
+                    className="pl-10 bg-gray-800/50 border-gray-700"
+                    {...register("pin_code")}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Adding a PIN code helps candidates find jobs in their area.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone_number" className="text-gray-300">
+                  Contact Phone <span className="text-gray-500">(Optional)</span>
+                </Label>
+                <div className="relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-3 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <Input
+                    id="phone_number"
+                    placeholder="e.g. +91 9876543210"
+                    className="pl-10 bg-gray-800/50 border-gray-700"
+                    {...register("phone_number")}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Providing a contact number allows candidates to reach out directly.</p>
+              </div>
             </div>
 
             {/* Job Details */}
@@ -534,6 +590,8 @@ const PostJob = () => {
                         recruiter_id: user.id,
                         isOpen: true,
                         company_name: watch("company_name"), // Add company_name directly to the job data
+                        pin_code: watch("pin_code") || '', // Add optional pin code
+                        phone_number: watch("phone_number") || '', // Add optional phone number
                         useMockData: true
                       };
 

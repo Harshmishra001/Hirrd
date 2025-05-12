@@ -49,14 +49,14 @@ const Onboarding = () => {
           className="h-36 text-2xl"
           onClick={() => handleRoleSelection("candidate")}
         >
-          Candidate
+          Candidate <span className="text-lg opacity-80">(Guest)</span>
         </Button>
         <Button
           variant="destructive"
           className="h-36 text-2xl"
           onClick={() => handleRoleSelection("recruiter")}
         >
-          Recruiter
+          Recruiter <span className="text-lg opacity-80">(Admin)</span>
         </Button>
       </div>
     </div>

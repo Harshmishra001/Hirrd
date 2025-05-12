@@ -4,7 +4,6 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Carousel,
@@ -12,7 +11,6 @@ import {
     CarouselItem,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { Link } from "react-router-dom";
 import companies from "../data/companies.json";
 import faqs from "../data/faq.json";
 
@@ -35,18 +33,7 @@ const LandingPage = () => {
           Explore thousands of job listings or find the perfect candidate
         </p>
       </section>
-      <div className="flex gap-6 justify-center">
-        <Link to={"/jobs?skip-onboarding=true&direct-access=true"}>
-          <Button variant="blue" size="xl">
-            Find Jobs
-          </Button>
-        </Link>
-        <Link to={"/post-job?skip-onboarding=true&direct-post=true"}>
-          <Button variant="destructive" size="xl">
-            Post a Job
-          </Button>
-        </Link>
-      </div>
+
       <Carousel
         plugins={[
           Autoplay({
