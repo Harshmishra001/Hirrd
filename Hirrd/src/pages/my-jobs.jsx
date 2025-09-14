@@ -1,7 +1,7 @@
 import CreatedApplications from "@/components/created-applications";
 import CreatedJobs from "@/components/created-jobs";
-import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 
 const MyJobs = () => {
   const { user, isLoaded } = useUser();

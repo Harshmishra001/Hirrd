@@ -1,6 +1,7 @@
 import { getMyJobs } from "@/api/apiJobs";
+import { Button } from "@/components/ui/button";
+import { useUser } from "@/contexts/AuthContext";
 import useFetch from "@/hooks/use-fetch";
-import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import { getLocallyCreatedJobs, removeLocallyCreatedJob } from "../data/mock-created-jobs.js";

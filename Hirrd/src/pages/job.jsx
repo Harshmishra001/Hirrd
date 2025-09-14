@@ -1,9 +1,9 @@
-import { useUser } from "@clerk/clerk-react";
 import MDEditor from "@uiw/react-md-editor";
 import { Briefcase, DoorClosed, DoorOpen, MapPinIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 
 import ApplicationCard from "@/components/application-card";
 import { ApplyJobDrawer } from "@/components/apply-job";
@@ -15,7 +15,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import { getSingleJob, updateHiringStatus } from "@/api/apiJobs";
+import { getSingleJob, updateHiringStatus } from "@/api/mockApi";
 import useFetch from "@/hooks/use-fetch";
 import { getApplicationsForUser, hasUserAppliedToJob, storeAppliedJob } from "../data/mock-applications.js";
 import { getLocallyCreatedJob } from "../data/mock-created-jobs.js";

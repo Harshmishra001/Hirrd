@@ -1,29 +1,28 @@
 /* eslint-disable react/prop-types */
-import { updateApplicationStatus as apiUpdateApplicationStatus } from "@/api/apiApplication";
-import { removeSavedJob as apiRemoveSavedJob, deleteJob, saveJob, updateJob } from "@/api/apiJobs";
+import { removeSavedJob as apiRemoveSavedJob, updateApplicationStatus as apiUpdateApplicationStatus, deleteJob, saveJob, updateJob } from "@/api/mockApi";
 import useFetch from "@/hooks/use-fetch";
-import { useUser } from "@clerk/clerk-react";
 import { Briefcase, Heart, MapPinIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 import { getApplicationsForJob, updateApplicationStatus } from "../data/mock-applications.js";
 import { addToSavedJobs, isJobSavedByUser, removeSavedJob } from "../data/mock-saved-jobs.js";
 import EditJobModal from "./EditJobModal";
 import { Button } from "./ui/button";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "./ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "./ui/select";
 
 // Helper function to extract company name from job description

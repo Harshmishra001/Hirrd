@@ -1,9 +1,9 @@
-import { getSavedJobs } from "@/api/apiJobs";
+import { getSavedJobs } from "@/api/mockApi";
 import JobCard from "@/components/job-card";
 import useFetch from "@/hooks/use-fetch";
-import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 import { getSavedJobsForUser } from "../data/mock-saved-jobs.js";
 
 const SavedJobs = () => {

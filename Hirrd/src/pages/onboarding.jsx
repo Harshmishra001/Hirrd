@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 
 const Onboarding = () => {
   const { user, isLoaded } = useUser();

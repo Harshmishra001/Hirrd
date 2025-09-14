@@ -1,26 +1,25 @@
-import { useSession } from "@clerk/clerk-react";
 import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { getStoredToken } from "../utils/auth";
 
 const useFetch = (cb, options = {}) => {
   const [data, setData] = useState(undefined);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
 
-  const { session } = useSession();
+  const { user } = useAuth();
 
   const fn = async (...args) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Get the Supabase token from Clerk
-      let supabaseAccessToken;
+      // Get the JWT token from our custom auth system
+      let authToken;
       try {
-        supabaseAccessToken = await session.getToken({
-          template: "supabase",
-        });
+        authToken = getStoredToken();
 
-        if (!supabaseAccessToken) {
+        if (!authToken) {
           throw new Error("Failed to get authentication token. Please try logging out and back in.");
         }
       } catch (tokenError) {
@@ -29,7 +28,7 @@ const useFetch = (cb, options = {}) => {
       }
 
       // Call the API function with the token
-      const response = await cb(supabaseAccessToken, options, ...args);
+      const response = await cb(authToken, options, ...args);
       setData(response);
       setError(null);
       return response;

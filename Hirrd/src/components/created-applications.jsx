@@ -1,6 +1,6 @@
 import { getApplications } from "@/api/apiApplication";
+import { useUser } from "@/contexts/AuthContext";
 import useFetch from "@/hooks/use-fetch";
-import { useUser } from "@clerk/clerk-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { BarLoader } from "react-spinners";

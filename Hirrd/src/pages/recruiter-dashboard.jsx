@@ -1,9 +1,9 @@
 import CreatedJobs from "@/components/created-jobs";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 
 const RecruiterDashboard = () => {
   const { user, isLoaded } = useUser();

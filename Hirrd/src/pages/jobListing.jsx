@@ -1,8 +1,8 @@
-import { useUser } from "@clerk/clerk-react";
 import { Building2, MapPin, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { BarLoader } from "react-spinners";
+import { useUser } from "../contexts/AuthContext";
 
 import JobCard from "@/components/job-card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import { getCompanies } from "@/api/apiCompanies";
-import { getJobs } from "@/api/apiJobs";
+import { getCompanies, getJobs } from "@/api/mockApi";
 import { getLocallyCreatedJobs } from "../data/mock-created-jobs.js";
 import { mockJobs } from "../data/mock-jobs.js";
 

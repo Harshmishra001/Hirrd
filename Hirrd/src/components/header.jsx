@@ -1,15 +1,15 @@
-import {
-    SignedIn,
-    SignedOut,
-    SignIn,
-    UserButton,
-    useUser,
-} from "@clerk/clerk-react";
 import { BriefcaseBusiness, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useUser } from "../contexts/AuthContext";
 import { getApplicationsForUser } from "../data/mock-applications.js";
 import { getSavedJobsForUser } from "../data/mock-saved-jobs.js";
+import {
+    SignedIn,
+    SignedOut,
+    SignInComponent as SignIn,
+    UserButton,
+} from "./auth/AuthComponents";
 import { Button } from "./ui/button";
 
 const Header = () => {
@@ -144,9 +144,9 @@ const Header = () => {
 
   return (
     <>
-      <nav className="py-4 flex justify-between items-center">
+      <nav className="py-1 flex justify-between items-center">
         <Link to="/">
-          <img src="/logo.png" className="h-20" alt="Hirrd Logo" />
+          <img src="/logo.png" className="h-16" alt="Hirrd Logo" />
         </Link>
 
         <div className="flex gap-8">
@@ -183,26 +183,30 @@ const Header = () => {
 
       {showSignIn && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm"
+          style={{ zIndex: 9999 }}
           onClick={handleOverlayClick}
         >
-          <SignIn
-            signUpForceRedirectUrl={
-              directPost
-                ? "/post-job?skip-onboarding=true&direct-post=true"
-                : skipOnboarding || directAccess
-                  ? "/jobs?skip-onboarding=true"
-                  : "/onboarding?force-selection=true"
-            }
-            fallbackRedirectUrl={
-              directPost
-                ? "/post-job?skip-onboarding=true&direct-post=true"
-                : skipOnboarding || directAccess
-                  ? "/jobs?skip-onboarding=true"
-                  : "/onboarding?force-selection=true"
-            }
-            allowSignUp={true}
-          />
+          <div className="relative" style={{ zIndex: 10000 }}>
+            <SignIn
+              signUpForceRedirectUrl={
+                directPost
+                  ? "/post-job?skip-onboarding=true&direct-post=true"
+                  : skipOnboarding || directAccess
+                    ? "/jobs?skip-onboarding=true"
+                    : "/onboarding?force-selection=true"
+              }
+              fallbackRedirectUrl={
+                directPost
+                  ? "/post-job?skip-onboarding=true&direct-post=true"
+                  : skipOnboarding || directAccess
+                    ? "/jobs?skip-onboarding=true"
+                    : "/onboarding?force-selection=true"
+              }
+              allowSignUp={true}
+              onSuccess={() => setShowSignIn(false)}
+            />
+          </div>
         </div>
       )}
     </>

@@ -1,4 +1,4 @@
-import { addNewJob } from "@/api/apiJobs";
+import { addNewJob } from "@/api/mockApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import useFetch from "@/hooks/use-fetch";
-import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import MDEditor from "@uiw/react-md-editor";
 import { State } from "country-state-city";
@@ -32,6 +31,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 import { z } from "zod";
+import { useUser } from "../contexts/AuthContext";
 
 const schema = z.object({
   title: z.string().min(1, { message: "Job title is required" }),

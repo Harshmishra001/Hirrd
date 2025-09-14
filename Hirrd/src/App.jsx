@@ -1,6 +1,6 @@
-import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useRef } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
 
 import ErrorBoundary from "./components/error-boundary";
 import NotFound from "./components/not-found";
